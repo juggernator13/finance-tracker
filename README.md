@@ -1,6 +1,6 @@
 # Личные финансы и аналитика
 
-![CI](https://github.com/<user>/<repo>/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/juggernator13/finance-tracker/actions/workflows/ci.yml/badge.svg)
 
 Система для учёта счетов и расходов. Можно загружать банковские выписки в CSV, операции сами раскладываются по категориям, есть бюджеты с уведомлением о превышении лимита и отчёты по категориям и месяцам.
 
