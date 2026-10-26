@@ -32,10 +32,19 @@ public class ErrorHandlingMiddleware
         {
             await WriteError(context, 404, "Not found", ex.Message);
         }
+        catch (ArgumentException ex)
+        {
+            await WriteError(context, 400, "Bad request", ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            await WriteError(context, 401, "Unauthorized", ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled error");
             await WriteError(context, 500, "Server error", "An unexpected error occurred");
         }
+
     }
 }
