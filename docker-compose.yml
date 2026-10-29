@@ -15,6 +15,7 @@ services:
     depends_on:
       identity-db:
         condition: service_healthy
+
   identity-db:
     image: postgres:16.6
     environment:
@@ -27,6 +28,22 @@ services:
       - identity-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${IDENTITY_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  accounts-db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ACCOUNTS_DB}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${ACCOUNTS_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -57,3 +74,4 @@ services:
 
 volumes:
   identity-db-data:
+  accounts-db-data:
