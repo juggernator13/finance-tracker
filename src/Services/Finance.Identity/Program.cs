@@ -26,6 +26,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     db.Database.Migrate();
+    DbSeeder.Seed(db);
 }
 
 app.UseCorrelationId();
