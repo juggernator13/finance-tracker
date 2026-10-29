@@ -1,6 +1,4 @@
-﻿using Finance.Identity.DTOs;
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Finance.Identity;
 

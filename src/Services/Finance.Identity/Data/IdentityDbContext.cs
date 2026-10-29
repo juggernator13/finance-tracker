@@ -1,8 +1,6 @@
-﻿using Finance.Identity.Domain;
+﻿using Microsoft.EntityFrameworkCore;
 
-using Microsoft.EntityFrameworkCore;
-
-namespace Finance.Identity.Data;
+namespace Finance.Identity;
 
 public class IdentityDbContext : DbContext
 {
@@ -17,5 +15,4 @@ public class IdentityDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
     }
-
 }

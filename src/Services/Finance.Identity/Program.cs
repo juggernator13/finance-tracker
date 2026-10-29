@@ -1,5 +1,5 @@
 using Finance.Common;
-using Finance.Identity.Data;
+using Finance.Identity;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +15,10 @@ builder.Services.AddHealthChecks().AddDbContextCheck<IdentityDbContext>();
 
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
 

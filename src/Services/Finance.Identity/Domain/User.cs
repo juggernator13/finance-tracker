@@ -1,4 +1,4 @@
-﻿namespace Finance.Identity.Domain;
+﻿namespace Finance.Identity;
 
 public class User
 {

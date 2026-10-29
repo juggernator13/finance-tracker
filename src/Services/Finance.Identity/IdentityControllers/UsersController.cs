@@ -1,5 +1,4 @@
 ﻿using Finance.Common;
-using Finance.Identity.DTOs;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

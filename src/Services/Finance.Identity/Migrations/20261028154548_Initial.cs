@@ -1,9 +1,8 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Finance.Identity.Migrations
+namespace Finance.Identity
 {
     /// <inheritdoc />
     public partial class Initial : Migration
