@@ -1,6 +1,20 @@
 name: finance
 
 services:
+  identity:
+    build:
+      context: .
+      dockerfile: src/Services/Finance.Identity/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=identity-db;Port=5432;Database=${IDENTITY_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+    ports:
+      - "127.0.0.1:5001:8080"
+    depends_on:
+      identity-db:
+        condition: service_healthy
   identity-db:
     image: postgres:16.6
     environment:

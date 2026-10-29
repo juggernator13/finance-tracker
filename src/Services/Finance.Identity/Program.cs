@@ -1,12 +1,41 @@
-var builder = WebApplication.CreateBuilder(args);
+using Finance.Common;
+using Finance.Identity;
 
-// Add services to the container.
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.AddFinanceSerilog();
+builder.Services.AddControllers();
+builder.Services.AddFinanceJwt(builder.Configuration);
+builder.Services.AddFinanceSwagger("Finance Identity API");
+builder.Services.AddHealthChecks().AddDbContextCheck<IdentityDbContext>();
+
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    db.Database.Migrate();
+    DbSeeder.Seed(db);
+}
+
+app.UseCorrelationId();
+app.UseErrorHandling();
+app.UseFinanceSwagger();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();
 

@@ -6,7 +6,9 @@ public static class ClaimsPrincipalExtensions
 {
     public static Guid GetUserId(this ClaimsPrincipal user)
     {
-        string? _user = user.FindFirst("sub")?.Value;
+        var _user = user.FindFirst("sub")?.Value
+         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
         if (Guid.TryParse(_user, out Guid result))
         {
             return result;
