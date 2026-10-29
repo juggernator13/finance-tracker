@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Finance.Identity
+namespace Finance.Identity.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
     partial class IdentityDbContextModelSnapshot : ModelSnapshot
@@ -22,7 +22,7 @@ namespace Finance.Identity
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Finance.Identity.Domain.RefreshToken", b =>
+            modelBuilder.Entity("Finance.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -34,6 +34,10 @@ namespace Finance.Identity
                     b.Property<bool>("Revoked")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -42,7 +46,7 @@ namespace Finance.Identity
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Finance.Identity.Domain.User", b =>
+            modelBuilder.Entity("Finance.Identity.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()

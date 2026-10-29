@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Finance.Identity
+namespace Finance.Identity.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -16,6 +17,7 @@ namespace Finance.Identity
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TokenHash = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Revoked = table.Column<bool>(type: "boolean", nullable: false)
                 },
