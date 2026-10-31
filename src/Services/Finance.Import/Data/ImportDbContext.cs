@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Finance.Import.Data;
+namespace Finance.Import;
 
 public class ImportDbContext : DbContext
 {
