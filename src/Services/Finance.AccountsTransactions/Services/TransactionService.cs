@@ -76,6 +76,45 @@ public class TransactionService(AccountsDbContext db)
         return new TransactionDto(transaction.Id, transaction.AccountId, transaction.Date, transaction.Amount, transaction.Description, transaction.CategoryId);
     }
 
+    public async Task<ImportResult> AddBatchAsync(Guid userId, Guid accountId, Guid batchId, List<ImportItem> items)
+    {
+        await CheckAccountAsync(userId, accountId);
+
+        var hashes = items
+            .Select(i => TransactionHasher.Compute(accountId, i.Date, i.Amount, i.Description.Trim(), i.Ordinal))
+            .ToList();
+
+        var existing = (await db.Transactions
+            .Where(t => t.AccountId == accountId && hashes.Contains(t.Hash))
+            .Select(t => t.Hash)
+            .ToListAsync()).ToHashSet();
+
+        int created = 0;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (!existing.Add(hashes[i]))
+            {
+                continue;
+            }
+
+            db.Transactions.Add(new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                Date = items[i].Date,
+                Amount = items[i].Amount,
+                Description = items[i].Description.Trim(),
+                Hash = hashes[i],
+                BatchId = batchId
+            });
+            created++;
+        }
+
+        await db.SaveChangesAsync();
+        return new ImportResult(created, items.Count - created);
+    }
+
     public async Task<List<TransactionDto>> GetListAsync(Guid userId, Guid accountId, DateOnly? from, DateOnly? to, int page, int size)
     {
         await CheckAccountAsync(userId, accountId);
