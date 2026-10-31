@@ -1,6 +1,22 @@
 name: finance
 
 services:
+  import-db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${IMPORT_DB}
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - import-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${IMPORT_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   accounts:
     build:
       context: .
@@ -90,3 +106,4 @@ services:
 volumes:
   identity-db-data:
   accounts-db-data:
+  import-db-data:
