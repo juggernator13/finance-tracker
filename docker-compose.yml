@@ -1,6 +1,21 @@
 name: finance
 
 services:
+  accounts:
+    build:
+      context: .
+      dockerfile: src/Services/Finance.AccountsTransactions/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=accounts-db;Port=5432;Database=${ACCOUNTS_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+    ports:
+      - "127.0.0.1:5002:8080"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+
   identity:
     build:
       context: .
@@ -15,6 +30,7 @@ services:
     depends_on:
       identity-db:
         condition: service_healthy
+
   identity-db:
     image: postgres:16.6
     environment:
@@ -27,6 +43,22 @@ services:
       - identity-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${IDENTITY_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  accounts-db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ACCOUNTS_DB}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${ACCOUNTS_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -57,3 +89,4 @@ services:
 
 volumes:
   identity-db-data:
+  accounts-db-data:
