@@ -1,6 +1,21 @@
 name: finance
 
 services:
+  accounts:
+    build:
+      context: .
+      dockerfile: src/Services/Finance.AccountsTransactions/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=accounts-db;Port=5432;Database=${ACCOUNTS_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+    ports:
+      - "127.0.0.1:5002:8080"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+
   identity:
     build:
       context: .
