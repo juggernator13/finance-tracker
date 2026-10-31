@@ -21,8 +21,4 @@
     <ProjectReference Include="..\..\BuildingBlocks\Finance.Common\Finance.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="AccountsTransactionsControllers\" />
-  </ItemGroup>
-
 </Project>

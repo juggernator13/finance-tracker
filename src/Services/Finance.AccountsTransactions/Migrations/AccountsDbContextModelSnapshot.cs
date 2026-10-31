@@ -68,7 +68,7 @@ namespace Finance.AccountsTransactions.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<string>("Desription")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 

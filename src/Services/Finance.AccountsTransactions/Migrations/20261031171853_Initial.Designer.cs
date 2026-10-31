@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Finance.AccountsTransactions.Migrations
 {
     [DbContext(typeof(AccountsDbContext))]
-    [Migration("20261030140057_Initial")]
+    [Migration("20261031171853_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -71,7 +71,7 @@ namespace Finance.AccountsTransactions.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<string>("Desription")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
