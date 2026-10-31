@@ -54,7 +54,7 @@ public class TransactionService(AccountsDbContext db)
 
         string? description = request.Description?.Trim();
 
-        if (description == null)
+        if (description == null || description == "")
         {
             throw new ArgumentException("Description is required");
         }
@@ -80,7 +80,7 @@ public class TransactionService(AccountsDbContext db)
     {
         await CheckAccountAsync(userId, accountId);
 
-        if (page < 1 && size < 1 || size > 200)
+        if (page < 1 || size < 1 || size > 200)
         {
             throw new ArgumentException("Page must be at least 1 and size must be from 1 to 200");
         }

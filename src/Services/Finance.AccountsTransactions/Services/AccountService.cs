@@ -18,12 +18,12 @@ public class AccountService(AccountsDbContext db)
 
     public async Task<AccountDto> CreateAsync(Guid userId, string name, string currency)
     {
-        if (string.IsNullOrEmpty(name))
+        if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Incorrect Name");
         }
 
-        if (string.IsNullOrEmpty(currency))
+        if (string.IsNullOrWhiteSpace(currency))
         {
             currency = "RUB";
         }
@@ -60,6 +60,11 @@ public class AccountService(AccountsDbContext db)
 
     public async Task<AccountDto> UpdateAsync(Guid userId, Guid id, string name)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Incorrect Name");
+        }
+
         Account account = await GetOwnAsync(userId, id);
 
         account.Name = name.Trim();
