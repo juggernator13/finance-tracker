@@ -1,0 +1,30 @@
+﻿@page "/login"
+@inject FinanceApi Api
+@inject NavigationManager Nav
+
+<h3>Вход</h3>
+
+<div><input @bind="email" @bind:event="oninput" placeholder="Email" /></div>
+<div><input @bind="password" @bind:event="oninput" type="password" placeholder="Пароль" /></div>
+<button @onclick="DoLogin">Войти</button>
+<p style="color:red">@error</p>
+
+@code {
+    string email = "user@example.com";
+    string password = "";
+    string? error;
+
+    async Task DoLogin()
+    {
+        try
+        {
+            error = null;
+            await Api.LoginAsync(email, password);
+            Nav.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

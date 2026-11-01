@@ -1,0 +1,67 @@
+﻿@page "/"
+@inject FinanceApi Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<h3>Счета</h3>
+<p style="color:red">@error</p>
+
+<table>
+    @foreach (var a in accounts)
+    {
+        <tr>
+            <td><a href="/accounts/@a.Id">@a.Name</a></td>
+            <td>@a.Currency</td>
+        </tr>
+    }
+</table>
+
+<h4>Новый счёт</h4>
+<input @bind="name" @bind:event="oninput" placeholder="Название" />
+<input @bind="currency" @bind:event="oninput" placeholder="Валюта" />
+<button @onclick="Create">Создать</button>
+
+@code {
+    List<AccountDto> accounts = new();
+    string name = "";
+    string currency = "RUB";
+    string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await Load();
+    }
+
+    async Task Load()
+    {
+        try
+        {
+            error = null;
+            accounts = await Api.GetAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    async Task Create()
+    {
+        try
+        {
+            await Api.CreateAccountAsync(name, currency);
+            name = "";
+            await Load();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}
