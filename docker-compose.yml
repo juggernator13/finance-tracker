@@ -1,6 +1,24 @@
 name: finance
 
 services:
+  import:
+    build:
+      context: .
+      dockerfile: src/Services/Finance.Import/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=import-db;Port=5432;Database=${IMPORT_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      Services__Accounts__BaseUrl: http://accounts:8080
+    ports:
+      - "127.0.0.1:5003:8080"
+    depends_on:
+      import-db:
+        condition: service_healthy
+      accounts:
+        condition: service_started
+
   import-db:
     image: postgres:16.6
     environment:
