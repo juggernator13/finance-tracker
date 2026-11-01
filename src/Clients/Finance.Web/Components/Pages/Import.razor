@@ -1,0 +1,104 @@
+﻿@page "/import"
+@inject FinanceApi Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<h3>Импорт выписки</h3>
+<p style="color:red">@error</p>
+
+<div>
+    Счёт:
+    <select @bind="accountId">
+        @foreach (var a in accounts)
+        {
+            <option value="@a.Id">@a.Name</option>
+        }
+    </select>
+</div>
+<div>
+    Формат:
+    <select @bind="format">
+        <option value="">определить автоматически</option>
+        @foreach (var f in formats)
+        {
+            <option value="@f">@f</option>
+        }
+    </select>
+</div>
+<div><InputFile OnChange="OnFileSelected" /></div>
+<button @onclick="Upload" disabled="@(file == null)">Загрузить</button>
+
+@if (last != null)
+{
+    <p>Статус: @last.Status. Создано: @last.Created, пропущено (дубли): @last.Skipped</p>
+}
+
+<h4>История импортов</h4>
+<table>
+    <tr><th>Дата</th><th>Формат</th><th>Статус</th><th>Строк</th><th>Создано</th><th>Дубли</th></tr>
+    @foreach (var h in history)
+    {
+        <tr>
+            <td>@h.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+            <td>@h.Format</td>
+            <td>@h.Status</td>
+            <td>@h.TotalRows</td>
+            <td>@h.Created</td>
+            <td>@h.Skipped</td>
+        </tr>
+    }
+</table>
+
+@code {
+    List<AccountDto> accounts = new();
+    List<string> formats = new();
+    List<ImportBatchDto> history = new();
+    Guid accountId;
+    string format = "";
+    IBrowserFile? file;
+    ImportBatchDto? last;
+    string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            accounts = await Api.GetAccountsAsync();
+            formats = await Api.GetFormatsAsync();
+            if (accounts.Count > 0)
+            {
+                accountId = accounts[0].Id;
+            }
+            history = await Api.GetImportsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+    }
+
+    async Task Upload()
+    {
+        try
+        {
+            error = null;
+            last = await Api.UploadAsync(accountId, format, file!);
+            history = await Api.GetImportsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}
