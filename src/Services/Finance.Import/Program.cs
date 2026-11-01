@@ -25,6 +25,16 @@ builder.Services.AddScoped<ImportService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ImportDbContext>();
+    db.Database.Migrate();
+}
+
+app.UseFinanceSwagger();
+
+app.MapControllers();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
