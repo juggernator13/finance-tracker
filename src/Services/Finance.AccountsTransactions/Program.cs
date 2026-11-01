@@ -28,9 +28,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseFinanceSwagger();
+
 app.MapControllers();
 
-app.UseHttpsRedirection();
+app.MapHealthChecks("/health");
 
 app.UseAuthorization();
 
