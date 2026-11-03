@@ -23,4 +23,11 @@
     <ProjectReference Include="..\..\BuildingBlocks\Finance.Messaging\Finance.Messaging.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CategorizationControllers\" />
+    <Folder Include="DTOs\" />
+    <Folder Include="Handlers\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>
