@@ -27,7 +27,6 @@
     <Folder Include="CategorizationControllers\" />
     <Folder Include="DTOs\" />
     <Folder Include="Handlers\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>
