@@ -1,6 +1,42 @@
 name: finance
 
 services:
+  categorization:
+    build:
+      context: .
+      dockerfile: src/Services/Finance.Categorization/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=categorization-db;Port=5432;Database=${CATEGORIZATION_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__User: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:5005:8080"
+    depends_on:
+      categorization-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  categorization-db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CATEGORIZATION_DB}
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - categorization-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${CATEGORIZATION_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   web:
     build:
       context: .
@@ -140,3 +176,4 @@ volumes:
   identity-db-data:
   accounts-db-data:
   import-db-data:
+  categorization-db-data:
