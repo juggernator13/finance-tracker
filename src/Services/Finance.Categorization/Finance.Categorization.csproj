@@ -24,8 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CategorizationControllers\" />
-    <Folder Include="DTOs\" />
     <Folder Include="Handlers\" />
   </ItemGroup>
 
