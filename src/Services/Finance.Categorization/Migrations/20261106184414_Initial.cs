@@ -32,7 +32,7 @@ namespace Finance.Categorization.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: true),
                     CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
                     Pattern = table.Column<string>(type: "text", nullable: false),
-                    isRegex = table.Column<bool>(type: "boolean", nullable: false),
+                    IsRegex = table.Column<bool>(type: "boolean", nullable: false),
                     Priority = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

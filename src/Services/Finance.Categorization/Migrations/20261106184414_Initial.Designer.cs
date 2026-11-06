@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Finance.Categorization.Migrations
 {
     [DbContext(typeof(CategorizationDbContext))]
-    [Migration("20261103212431_Initial")]
+    [Migration("20261106184414_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -54,6 +54,9 @@ namespace Finance.Categorization.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsRegex")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Pattern")
                         .IsRequired()
                         .HasColumnType("text");
@@ -63,9 +66,6 @@ namespace Finance.Categorization.Migrations
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("isRegex")
-                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 

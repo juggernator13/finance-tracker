@@ -51,6 +51,9 @@ namespace Finance.Categorization.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsRegex")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Pattern")
                         .IsRequired()
                         .HasColumnType("text");
@@ -60,9 +63,6 @@ namespace Finance.Categorization.Migrations
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("isRegex")
-                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
