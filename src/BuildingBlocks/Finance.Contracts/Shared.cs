@@ -1,6 +1,6 @@
 namespace Finance.Contracts;
 
-public record TransactionItem(Guid Id, DateOnly Date, decimal Amount, string Description, int Ordinal);
+public record TransactionItem(Guid Id, Guid AccountId, DateOnly Date, decimal Amount, string Description);
 
 public record CategorizedItem(
     Guid TransactionId,
