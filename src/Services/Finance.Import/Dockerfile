@@ -7,4 +7,4 @@ RUN dotnet publish src/Services/Finance.Import -c Release -o /out
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /out .
-ENTRYPOINT ["dotnet", "Finance.AccountsTransactions.dll"]
+ENTRYPOINT ["dotnet", "Finance.Import.dll"]
