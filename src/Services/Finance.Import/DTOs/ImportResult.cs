@@ -1,3 +1,5 @@
-﻿namespace Finance.Import;
+﻿using Finance.Contracts;
 
-public record ImportResult(int Created, int Skipped);
+namespace Finance.Import;
+
+public record ImportResult(int Created, int Skipped, List<TransactionItem> Items);
