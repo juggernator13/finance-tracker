@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BuildingBlocks\Finance.Common\Finance.Common.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Finance.Messaging\Finance.Messaging.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Finance.Contracts\Finance.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
