@@ -35,7 +35,7 @@ public class RuleService(CategorizationDbContext db)
             {
                 _ = new Regex(pattern);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new ArgumentException("Invalid regex");
             }
