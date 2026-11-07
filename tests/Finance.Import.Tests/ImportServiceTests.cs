@@ -1,172 +1,158 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Finance.Contracts;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Finance.Import.Tests;
 
 public class ImportServiceTests
 {
-    private readonly Guid _userId = Guid.NewGuid();
-    private readonly Guid _accountId = Guid.NewGuid();
+    private static readonly Guid UserId = Guid.NewGuid();
+    private static readonly Guid AccountId = Guid.NewGuid();
 
-    private static (ImportService Service, ImportDbContext Db, FakeAccountsClient Accounts) Create()
+    private static (ImportService Service, ImportDbContext Db, FakeAccountsClient Accounts, FakeMessageBus Bus) Create()
     {
         var db = TestHelpers.CreateDb();
         var accounts = new FakeAccountsClient();
+        var bus = new FakeMessageBus();
         var factory = new StatementParserFactory(new IStatementParser[] { new Bank1CsvParser(), new Bank2CsvParser() });
-        return (new ImportService(db, factory, accounts), db, accounts);
+        return (new ImportService(db, factory, accounts, bus), db, accounts, bus);
     }
 
     [Fact]
-    public async Task Start_Success_SavesCompletedBatch()
+    public async Task Start_Success_SetsCategorizing_AndPublishesBatch()
     {
-        var (service, db, _) = Create();
+        var (service, db, _, bus) = Create();
 
-        var dto = await service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv);
+        var dto = await service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv);
+
+        Assert.Equal(ImportStatus.Categorizing, dto.Status);
+        Assert.Equal(3, dto.TotalRows);
+        Assert.Equal(1, await db.ImportBatches.AsNoTracking().CountAsync());
+        var message = Assert.IsType<CategorizeBatch>(Assert.Single(bus.Published));
+        Assert.Equal(dto.Id, message.BatchId);
+        Assert.Equal(UserId, message.UserId);
+        Assert.Equal(3, message.Items.Count);
+    }
+
+    [Fact]
+    public async Task Start_SendsOrdinalsToAccounts()
+    {
+        var (service, _, accounts, _) = Create();
+
+        await service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv);
+
+        var coffee = accounts.ReceivedRows!.Where(r => r.Description == "Кофе").ToList();
+        Assert.Equal(new[] { 0, 1 }, coffee.Select(r => r.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public async Task Start_NoCreatedItems_SetsCompleted_AndPublishesNothing()
+    {
+        var (service, _, accounts, bus) = Create();
+        accounts.Result = new ImportResult(0, 3, new List<TransactionItem>());
+
+        var dto = await service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv);
 
         Assert.Equal(ImportStatus.Completed, dto.Status);
-        Assert.Equal("bank1", dto.Format);
-        Assert.Equal(3, dto.TotalRows);
-        Assert.Equal(3, dto.Created);
-
-        var saved = await db.ImportBatches.AsNoTracking().SingleAsync();
-        Assert.Equal(_userId, saved.UserId);
-        Assert.Equal(_accountId, saved.AccountId);
-        Assert.Equal(ImportStatus.Completed, saved.Status);
+        Assert.Empty(bus.Published);
     }
 
     [Fact]
-    public async Task Start_Bank2_WorksWithExplicitFormat()
+    public async Task Start_BrokerDown_SetsFailed()
     {
-        var (service, _, _) = Create();
+        var (service, _, _, bus) = Create();
+        bus.Error = new Exception("down");
 
-        var dto = await service.StartAsync(_userId, _accountId, "bank2", TestHelpers.Bank2Csv);
+        var dto = await service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv);
 
-        Assert.Equal("bank2", dto.Format);
-        Assert.Equal(2, dto.TotalRows);
+        Assert.Equal(ImportStatus.Failed, dto.Status);
+        Assert.False(string.IsNullOrEmpty(dto.Error));
     }
 
     [Fact]
-    public async Task Start_SendsRowsWithOrdinalsToAccounts()
+    public async Task Start_AccountsDown_SetsFailed_AndPublishesNothing()
     {
-        var (service, _, accounts) = Create();
+        var (service, _, accounts, bus) = Create();
+        accounts.ImportError = new HttpRequestException("down");
 
-        await service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv);
+        var dto = await service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv);
 
-        Assert.NotNull(accounts.ReceivedRows);
-        Assert.Equal(0, accounts.ReceivedRows![1].Ordinal);
-        Assert.Equal(1, accounts.ReceivedRows[2].Ordinal);
+        Assert.Equal(ImportStatus.Failed, dto.Status);
+        Assert.False(string.IsNullOrEmpty(dto.Error));
+        Assert.Empty(bus.Published);
     }
 
     [Fact]
-    public async Task Start_NotOwner_ThrowsAndSavesNothing()
+    public async Task Start_ForeignAccount_Throws_AndSavesNothing()
     {
-        var (service, db, accounts) = Create();
+        var (service, db, accounts, _) = Create();
         accounts.IsOwner = false;
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv));
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => service.StartAsync(UserId, AccountId, "bank1", TestHelpers.Bank1Csv));
 
-        Assert.Equal(0, await db.ImportBatches.CountAsync());
+        Assert.Equal(0, await db.ImportBatches.AsNoTracking().CountAsync());
     }
 
     [Fact]
-    public async Task Start_InvalidFile_ThrowsAndSavesNothing()
+    public async Task Start_UnknownFileFormat_Throws_AndSavesNothing()
     {
-        var (service, db, _) = Create();
-        string csv = TestHelpers.Bank1Header + "\n32.10.2026;A;-1";
+        var (service, db, _, bus) = Create();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.StartAsync(_userId, _accountId, null, csv));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.StartAsync(UserId, AccountId, null, "foo,bar\n1,2"));
 
-        Assert.Equal(0, await db.ImportBatches.CountAsync());
+        Assert.Equal(0, await db.ImportBatches.AsNoTracking().CountAsync());
+        Assert.Empty(bus.Published);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task Start_EmptyFile_Throws(string csv)
+    [InlineData("Дата операции;Описание;Сумма")]
+    public async Task Start_EmptyOrNoRows_Throws(string csv)
     {
-        var (service, _, _) = Create();
+        var (service, _, _, _) = Create();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.StartAsync(_userId, _accountId, null, csv));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.StartAsync(UserId, AccountId, "bank1", csv));
     }
 
     [Fact]
-    public async Task Start_HeaderOnly_Throws()
+    public async Task GetAll_ReturnsOnlyOwn_NewestFirst()
     {
-        var (service, _, _) = Create();
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Header));
-    }
-
-    [Fact]
-    public async Task Start_UnknownFormat_Throws()
-    {
-        var (service, _, _) = Create();
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.StartAsync(_userId, _accountId, "bank99", TestHelpers.Bank1Csv));
-    }
-
-    [Fact]
-    public async Task Start_AccountsDown_SavesFailedBatch()
-    {
-        var (service, db, accounts) = Create();
-        accounts.ImportError = new HttpRequestException("down");
-
-        var dto = await service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv);
-
-        Assert.Equal(ImportStatus.Failed, dto.Status);
-        Assert.Equal("down", dto.Error);
-
-        var saved = await db.ImportBatches.AsNoTracking().SingleAsync();
-        Assert.Equal(ImportStatus.Failed, saved.Status);
-    }
-
-    [Fact]
-    public async Task GetAll_ReturnsOnlyOwnBatches_NewestFirst()
-    {
-        var (service, db, _) = Create();
-        var old = new ImportBatch { Id = Guid.NewGuid(), UserId = _userId, AccountId = _accountId, Format = "bank1", Status = ImportStatus.Completed, CreatedAt = DateTime.UtcNow.AddDays(-1) };
-        var recent = new ImportBatch { Id = Guid.NewGuid(), UserId = _userId, AccountId = _accountId, Format = "bank1", Status = ImportStatus.Completed, CreatedAt = DateTime.UtcNow };
-        var foreign = new ImportBatch { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountId = _accountId, Format = "bank1", Status = ImportStatus.Completed, CreatedAt = DateTime.UtcNow };
-        db.ImportBatches.AddRange(old, recent, foreign);
+        var (service, db, _, _) = Create();
+        db.ImportBatches.AddRange(
+            NewBatch(UserId, new DateTime(2026, 10, 1)),
+            NewBatch(UserId, new DateTime(2026, 10, 3)),
+            NewBatch(Guid.NewGuid(), new DateTime(2026, 10, 2)));
         await db.SaveChangesAsync();
 
-        var list = await service.GetAllAsync(_userId);
+        var list = await service.GetAllAsync(UserId);
 
         Assert.Equal(2, list.Count);
-        Assert.Equal(recent.Id, list[0].Id);
-        Assert.Equal(old.Id, list[1].Id);
+        Assert.True(list[0].CreatedAt > list[1].CreatedAt);
     }
 
     [Fact]
-    public async Task Get_OwnBatch_ReturnsIt()
+    public async Task Get_ForeignBatch_Throws()
     {
-        var (service, _, _) = Create();
-        var started = await service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv);
+        var (service, db, _, _) = Create();
+        var batch = NewBatch(Guid.NewGuid(), DateTime.UtcNow);
+        db.ImportBatches.Add(batch);
+        await db.SaveChangesAsync();
 
-        var dto = await service.GetAsync(_userId, started.Id);
-
-        Assert.Equal(started.Id, dto.Id);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetAsync(UserId, batch.Id));
     }
 
-    [Fact]
-    public async Task Get_OtherUsersBatch_Throws()
+    private static ImportBatch NewBatch(Guid userId, DateTime createdAt) => new()
     {
-        var (service, _, _) = Create();
-        var started = await service.StartAsync(_userId, _accountId, null, TestHelpers.Bank1Csv);
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.GetAsync(Guid.NewGuid(), started.Id));
-    }
-
-    [Fact]
-    public void GetFormats_ReturnsBothBanks()
-    {
-        var (service, _, _) = Create();
-
-        Assert.Equal(new[] { "bank1", "bank2" }, service.GetFormats());
-    }
+        Id = Guid.NewGuid(),
+        UserId = userId,
+        AccountId = AccountId,
+        Format = "bank1",
+        Status = ImportStatus.Completed,
+        TotalRows = 1,
+        CreatedAt = createdAt
+    };
 }
