@@ -62,7 +62,7 @@ namespace Finance.AccountsTransactions.Migrations
                     b.Property<Guid?>("BatchId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uuid");
 
                     b.Property<DateOnly>("Date")

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Finance.Contracts;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Finance.AccountsTransactions;
 
@@ -89,6 +91,8 @@ public class TransactionService(AccountsDbContext db)
             .Select(t => t.Hash)
             .ToListAsync()).ToHashSet();
 
+        var createdItems = new List<TransactionItem>();
+
         int created = 0;
 
         for (int i = 0; i < items.Count; i++)
@@ -98,7 +102,7 @@ public class TransactionService(AccountsDbContext db)
                 continue;
             }
 
-            db.Transactions.Add(new Transaction
+            var tx = new Transaction
             {
                 Id = Guid.NewGuid(),
                 AccountId = accountId,
@@ -107,12 +111,15 @@ public class TransactionService(AccountsDbContext db)
                 Description = items[i].Description.Trim(),
                 Hash = hashes[i],
                 BatchId = batchId
-            });
+            };
+
+            db.Transactions.Add(tx);
+            createdItems.Add(new TransactionItem(tx.Id, accountId, tx.Date, tx.Amount, tx.Description));
             created++;
         }
 
         await db.SaveChangesAsync();
-        return new ImportResult(created, items.Count - created);
+        return new ImportResult(created, items.Count - created, createdItems);
     }
 
     public async Task<List<TransactionDto>> GetListAsync(Guid userId, Guid accountId, DateOnly? from, DateOnly? to, int page, int size)

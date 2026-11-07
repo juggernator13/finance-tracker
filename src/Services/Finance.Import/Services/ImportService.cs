@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Finance.Contracts;
+using Finance.Messaging;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Finance.Import;
 
-public class ImportService(ImportDbContext db, StatementParserFactory factory, IAccountsClient accounts)
+public class ImportService(ImportDbContext db, StatementParserFactory factory, IAccountsClient accounts, IMessageBus bus)
 {
     public async Task<ImportBatchDto> StartAsync(Guid userId, Guid accountId, string? format, string csvText)
     {
@@ -41,20 +44,42 @@ public class ImportService(ImportDbContext db, StatementParserFactory factory, I
         db.ImportBatches.Add(batch);
         await db.SaveChangesAsync();
 
+        ImportResult result;
         try
         {
-            ImportResult result = await accounts.ImportAsync(batch.Id, userId, accountId, rows);
-            batch.Created = result.Created;
-            batch.Skipped = result.Skipped;
-            batch.Status = ImportStatus.Completed;
+            result = await accounts.ImportAsync(batch.Id, userId, accountId, rows);
         }
         catch (HttpRequestException ex)
         {
             batch.Status = ImportStatus.Failed;
             batch.Error = ex.Message;
+            await db.SaveChangesAsync();
+            return ToDto(batch);
         }
 
+        batch.Created = result.Created;
+        batch.Skipped = result.Skipped;
+
+        if (result.Items.Count == 0)
+        {
+            batch.Status = ImportStatus.Completed;
+            await db.SaveChangesAsync();
+            return ToDto(batch);
+        }
+
+        batch.Status = ImportStatus.Categorizing;
         await db.SaveChangesAsync();
+
+        try
+        {
+            await bus.PublishAsync(new CategorizeBatch(batch.Id, userId, result.Items));
+        }
+        catch (Exception ex)
+        {
+            batch.Status = ImportStatus.Failed;
+            batch.Error = "Message broker unavailable: " + ex.Message;
+            await db.SaveChangesAsync();
+        }
 
         return ToDto(batch);
     }
