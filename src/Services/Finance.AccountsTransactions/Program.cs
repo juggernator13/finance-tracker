@@ -1,5 +1,7 @@
 using Finance.AccountsTransactions;
 using Finance.Common;
+using Finance.Contracts;
+using Finance.Messaging;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +20,9 @@ builder.Services.AddDbContext<AccountsDbContext>(options =>
 builder.Services.AddHealthChecks().AddDbContextCheck<AccountsDbContext>();
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<TransactionService>();
+
+builder.Services.AddRabbitMq(builder.Configuration);
+builder.Services.AddMessageHandler<TransactionsCategorized, TransactionsCategorizedHandler>("accounts");
 
 var app = builder.Build();
 
