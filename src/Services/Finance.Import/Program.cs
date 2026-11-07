@@ -1,5 +1,7 @@
 using Finance.Common;
+using Finance.Contracts;
 using Finance.Import;
+using Finance.Messaging;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +24,10 @@ builder.Services.AddHttpClient<IAccountsClient, AccountsClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Services:Accounts:BaseUrl"]!));
 
 builder.Services.AddScoped<ImportService>();
+
+builder.Services.AddRabbitMq(builder.Configuration);
+builder.Services.AddMessageHandler<TransactionsCategorized, TransactionsCategorizedHandler>("import");
+builder.Services.AddMessageHandler<CategorizationFailed, CategorizationFailedHandler>("import");
 
 var app = builder.Build();
 
