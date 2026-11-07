@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Finance.AccountsTransactions\Finance.AccountsTransactions.csproj" />
+    <ProjectReference Include="..\..\src\Services\Finance.Import\Finance.Import.csproj" />
   </ItemGroup>
 
 </Project>
