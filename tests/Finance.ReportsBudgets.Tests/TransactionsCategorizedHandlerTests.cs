@@ -2,6 +2,10 @@
 using Finance.Messaging;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Finance.ReportsBudgets.Tests;
 
@@ -10,9 +14,15 @@ public class TransactionsCategorizedHandlerTests
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _cat = Guid.NewGuid();
 
-    private static TransactionsCategorizedHandler CreateHandler(ReportsDbContext db, FakeMessageBus bus)
+    private static TransactionsCategorizedHandler CreateHandler(
+    ReportsDbContext db, FakeMessageBus bus, IDistributedCache? cache = null)
     {
-        return new TransactionsCategorizedHandler(new AggregateService(db), new BudgetService(db), bus);
+        return new TransactionsCategorizedHandler(
+            new AggregateService(db),
+            new BudgetService(db),
+            bus,
+            cache ?? new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())),
+            NullLogger<TransactionsCategorizedHandler>.Instance);
     }
 
     private TransactionsCategorized Message(decimal amount)
