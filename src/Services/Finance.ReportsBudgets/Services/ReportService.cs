@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Finance.ReportsBudgets;
 
-public class ReportService(ReportsDbContext db, IDistributedCache cache, ILogger logger)
+public class ReportService(ReportsDbContext db, IDistributedCache cache, ILogger<ReportService> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
