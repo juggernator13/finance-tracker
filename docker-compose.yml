@@ -96,15 +96,11 @@ services:
       context: .
       dockerfile: src/Clients/Finance.Web/Dockerfile
     environment:
-      Services__Identity: http://identity:8080
-      Services__Accounts: http://accounts:8080
-      Services__Import: http://import:8080
+      Services__Gateway: http://gateway:8080
     ports:
       - "127.0.0.1:5004:8080"
     depends_on:
-      - identity
-      - accounts
-      - import
+      - gateway
 
   import:
     build:
@@ -115,6 +111,9 @@ services:
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__User: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
       Services__Accounts__BaseUrl: http://accounts:8080
     ports:
       - "127.0.0.1:5003:8080"
@@ -123,6 +122,8 @@ services:
         condition: service_healthy
       accounts:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   import-db:
     image: postgres:16.6
@@ -149,10 +150,15 @@ services:
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__User: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
     ports:
       - "127.0.0.1:5002:8080"
     depends_on:
       accounts-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   identity:

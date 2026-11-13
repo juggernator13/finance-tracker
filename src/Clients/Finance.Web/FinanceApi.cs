@@ -87,4 +87,10 @@ public class FinanceApi(IHttpClientFactory factory, AuthState auth)
         await Check(response);
         return (await response.Content.ReadFromJsonAsync<ImportBatchDto>())!;
     }
+
+    public Task<List<CategoryReportItem>> GetCategoryReportAsync(int year, int month)
+        => GetAsync<List<CategoryReportItem>>($"api/reports/by-category?year={year}&month={month}");
+
+    public Task<List<MonthlyReportItem>> GetMonthlyReportAsync(int year)
+        => GetAsync<List<MonthlyReportItem>>($"api/reports/monthly?year={year}");
 }
