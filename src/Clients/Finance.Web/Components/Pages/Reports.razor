@@ -1,0 +1,103 @@
+﻿@page "/reports"
+@inject FinanceApi Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<h3>Отчёты</h3>
+<p style="color:red">@error</p>
+
+<div>
+    Год: <input type="number" @bind="year" style="width:80px" />
+    Месяц: <input type="number" @bind="month" min="1" max="12" style="width:60px" />
+    <button @onclick="Load" disabled="@loading">Показать</button>
+</div>
+
+@if (loading)
+{
+    <p>Загрузка...</p>
+}
+else if (loaded)
+{
+    <h4>По категориям за @month.ToString("00").@year</h4>
+    @if (byCategory.Count == 0)
+    {
+        <p>Нет данных за выбранный период.</p>
+    }
+    else
+    {
+        <table border="1" cellpadding="4">
+            <tr><th>Категория</th><th>Расходы</th><th>Доходы</th></tr>
+            @foreach (var r in byCategory)
+            {
+                <tr>
+                    <td>@r.CategoryName</td>
+                    <td>@r.Expense.ToString("N2")</td>
+                    <td>@r.Income.ToString("N2")</td>
+                </tr>
+            }
+        </table>
+    }
+
+    <h4>По месяцам за @year год</h4>
+    @if (monthly.Count == 0)
+    {
+        <p>Нет данных за выбранный год.</p>
+    }
+    else
+    {
+        <table border="1" cellpadding="4">
+            <tr><th>Месяц</th><th>Расходы</th><th>Доходы</th><th>Баланс</th></tr>
+            @foreach (var m in monthly)
+            {
+                <tr>
+                    <td>@m.Month.ToString("00")</td>
+                    <td>@m.Expense.ToString("N2")</td>
+                    <td>@m.Income.ToString("N2")</td>
+                    <td>@m.Balance.ToString("N2")</td>
+                </tr>
+            }
+        </table>
+    }
+}
+
+@code {
+    int year = DateTime.Today.Year;
+    int month = DateTime.Today.Month;
+    List<CategoryReportItem> byCategory = new();
+    List<MonthlyReportItem> monthly = new();
+    string? error;
+    bool loading;
+    bool loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await Load();
+    }
+
+    async Task Load()
+    {
+        loading = true;
+        error = null;
+
+        try
+        {
+            byCategory = await Api.GetCategoryReportAsync(year, month);
+            monthly = await Api.GetMonthlyReportAsync(year);
+            loaded = true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
