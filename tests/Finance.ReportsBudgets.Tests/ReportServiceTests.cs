@@ -12,7 +12,7 @@ public class ReportServiceTests
         TestHelpers.AddTotal(db, _userId, Guid.NewGuid(), 2026, 10, 300);
         TestHelpers.AddTotal(db, _userId, Guid.NewGuid(), 2026, 11, 999);        // другой месяц
         TestHelpers.AddTotal(db, Guid.NewGuid(), Guid.NewGuid(), 2026, 10, 888); // чужой
-        var service = new ReportService(db);
+        var service = TestHelpers.CreateReportService(db);
 
         var result = await service.GetByCategoryAsync(_userId, 2026, 10);
 
@@ -26,7 +26,7 @@ public class ReportServiceTests
         TestHelpers.AddTotal(db, _userId, Guid.NewGuid(), 2026, 10, 100, 0);
         TestHelpers.AddTotal(db, _userId, Guid.NewGuid(), 2026, 10, 50, 1000);
         TestHelpers.AddTotal(db, _userId, Guid.NewGuid(), 2025, 10, 777);        // другой год
-        var service = new ReportService(db);
+        var service = TestHelpers.CreateReportService(db);
 
         var result = await service.GetMonthlyAsync(_userId, 2026);
 
@@ -39,7 +39,7 @@ public class ReportServiceTests
     [Fact]
     public async Task InvalidMonthOrYear_Throws()
     {
-        var service = new ReportService(TestHelpers.CreateDb());
+        var service = TestHelpers.CreateReportService(TestHelpers.CreateDb());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.GetByCategoryAsync(_userId, 2026, 13));
         await Assert.ThrowsAsync<ArgumentException>(() => service.GetMonthlyAsync(_userId, 1900));

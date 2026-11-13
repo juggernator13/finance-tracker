@@ -23,6 +23,12 @@ builder.Services.AddScoped<AggregateService>();
 builder.Services.AddScoped<BudgetService>();
 builder.Services.AddScoped<ReportService>();
 
+builder.Services.AddStackExchangeRedisCache(o =>
+{
+    o.Configuration = builder.Configuration["Redis:ConnectionString"];
+    o.InstanceName = "finance:";
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

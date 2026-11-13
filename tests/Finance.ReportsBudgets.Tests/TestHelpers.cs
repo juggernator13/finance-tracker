@@ -2,6 +2,10 @@
 using Finance.Messaging;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Finance.ReportsBudgets.Tests;
 
@@ -64,4 +68,8 @@ public static class TestHelpers
         db.SaveChanges();
         return budget;
     }
+
+    public static ReportService CreateReportService(ReportsDbContext db, IDistributedCache? cache = null) =>
+        new(db, cache ?? new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())),
+        NullLogger<ReportService>.Instance);
 }
